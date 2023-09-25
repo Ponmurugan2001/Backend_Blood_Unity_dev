@@ -27,7 +27,7 @@ exports.createUser = async (req, res) => {
 };
 exports.loginUser = async (req, res) => {
   try {
-    console.log("insidet try");
+    console.log("inside login");
     const userexist = await User.findOne({email: req.body.email });
 
     if (!userexist) {
