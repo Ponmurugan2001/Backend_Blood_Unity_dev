@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const recipientProfile= require("../models/recipientModel");
 const User = require("../models/modelUser");
 const Appointment = require('../models/appointment');
-
+const SuccessDonation =require('../models/successfullDonation')
 
 
 
@@ -66,13 +66,14 @@ exports.getRecipientProfile = async (req, res) => {
     try {
       const recipientId = req.params.recipientId;
       console.log(recipientId);
-      const appointment = await Appointment.findOne({ recipientId,status:"accepted"});
+      const appointment = await Appointment.findOne({ recipientId, status: { $in: ["accepted", "pending"] } });
   
       if (!appointment) {
-        return res.status(404).json({ success: false, message: ' appointment not found' });
+        return res.status(404).json({ success: false, message: 'Appointment not found' });
       }
   
-      res.json({ success: true, message: ' appointment found', appointment });
+      // If the appointment is found, set 'success' to true
+      res.json({ success: true, message: 'Appointment found', appointment });
       console.log("hello");
     } catch (error) {
       res.status(500).json({ success: false, error: 'Failed to fetch pending appointment', message: error.message });

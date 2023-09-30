@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const donorProfile = require("../models/donarModel");
 const User = require("../models/modelUser");
-
+const SuccessDonation =require('../models/successfullDonation')
 const Appointment = require('../models/appointment');
 
 
@@ -96,23 +96,36 @@ exports.createAppointment = async (req, res) => {
     if (existingAppointment) {
       // Delete the existing appointment
       await Appointment.findByIdAndDelete(existingAppointment._id);
-
-      // Create a new appointment
-      const newAppointment = new Appointment(req.body);
-      await newAppointment.save();
-
-      res.status(201).json({ success: true, message: 'Appointment updated successfully', appointment: newAppointment });
-    } else {
-      // Create a new appointment if no match is found
-      const appointment = new Appointment(req.body);
-      await appointment.save();
-      res.status(201).json({ success: true, message: 'Appointment created successfully', appointment });
     }
+
+    // Create a new appointment
+    const newAppointment = new Appointment(req.body);
+    await newAppointment.save();
+
+    // Update the donor's availability to 'NotAvailable'
+    
+    // Check if a donor profile with the same donorId already exists
+    const existingProfile = await donorProfile.findOne({ donor: donorId });
+
+    if (existingProfile) {
+      // If a matching record is found, update the availability to "NotAvailable"
+      existingProfile.Availability = "NotAvailable";
+      await existingProfile.save();
+      console.log("Donor availability updated to NotAvailable");
+    } 
+    return res.status(201).send({
+      success: true,
+      message: "Appointment created and donor profile updated",
+    });
   } catch (error) {
-    res.status(400).json({ success: false, error: 'Failed to create/update appointment', message: error.message });
+    console.log(error);
+    return res.status(500).send({
+      success: false,
+      message: "Error in creating appointment and updating donor profile",
+      error,
+    });
   }
 };
-
 
 
 
@@ -139,9 +152,9 @@ exports.getPendingAppointments = async (req, res) => {
 // Update the status of an appointment (accept or reject) based on donorId
 exports.updateAppointmentStatus = async (req, res) => {
   try {
-    const { donorId, status } = req.body; // Get donorId and status from the request body
+    const { donorId, status } = req.body;
 
-    if (!['accepted', 'rejected','successfull'].includes(status)) {
+    if (!['pending', 'accepted', 'rejected', 'successfull'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
     }
 
@@ -152,13 +165,56 @@ exports.updateAppointmentStatus = async (req, res) => {
     }
 
     appointment.status = status;
-    const updatedAppointment = await appointment.save();
+    await appointment.save();
 
-    res.json({ success: true });
+    if (status === 'accepted') {
+      // Update donor availability to "NotAvailable"
+      await updateDonorAvailability(donorId, 'NotAvailable');
+    } else if (status === 'rejected' || status === 'successfull') {
+      // Update donor availability to "Available"
+      await updateDonorAvailability(donorId, 'Available');
+    }
+
+    if (status === 'successfull') {
+      // Create a new SuccessDonation record
+      const newAppointment = new SuccessDonation({
+        appointments: [appointment],
+      });
+
+      const savedAppointment = await newAppointment.save();
+      console.log("Appointment added to the SuccessDonation record:", savedAppointment);
+
+      // Delete the appointment from the Appointment collection
+      const deletedAppointment = await Appointment.findOneAndRemove({ donorId });
+      if (!deletedAppointment) {
+        return res.status(404).json({ error: 'Appointment not found' });
+      }
+
+      return res.json({ success: true, message: 'Appointment deleted successfully' });
+    }
+
+    // Send a success response for other status values
+    res.json({ success: true, message: 'Appointment status updated successfully' });
   } catch (error) {
-    res.status(500).json({ success: false });
+    console.error(error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 };
+
+async function updateDonorAvailability(donorId, availability) {
+  try {
+    const existingProfile = await donorProfile.findOne({ donor: donorId });
+    if (existingProfile) {
+      existingProfile.Availability = availability;
+      await existingProfile.save();
+      console.log(`Donor availability updated to ${availability}`);
+    }
+  } catch (error) {
+    console.error(`Failed to update Donor availability to ${availability}`, error);
+    throw error;
+  }
+}
+
 
 
 // Delete an appointment by ID

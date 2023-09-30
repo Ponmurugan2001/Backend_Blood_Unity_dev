@@ -19,6 +19,12 @@ const donorSchema = new mongoose.Schema(
       type: Number,
       require: [true, "blood quanity is require"],
     },
+    email: {
+      type: String,
+      required: [true, "email is required"],
+    },
+
+  
     location: {
       type: String,
       required: [true, "location required"],
