@@ -5,6 +5,8 @@ const inventoryRouter=require("./routes/inventoryRoutes")
 const analyticsRouter= require("./routes/analyticsRoutes")
 const donarProfile=require("./routes/donorProfile")
 const recipientProfile=require("./routes/recipientProfile")
+const TotalInventory=require("./routes/Totalinventory")
+const successDonation=require("./routes/successfullDonationRoutes")
 const cors = require('cors');
 
 
@@ -22,7 +24,9 @@ app.use('/api/user',userRouter)
 app.use('/api/user/profile',donarProfile)
 app.use('/api/user/recipient/profile',recipientProfile)
 app.use('/api/user/inventory',inventoryRouter)
+app.use('/api/user/Totalinventory',TotalInventory)
 app.use("/api/user/analytics", analyticsRouter);
+app.use("/api/user/successfull",successDonation)
 app.get("/",(req,res)=>{
     res.send("welcome to backend")
 });

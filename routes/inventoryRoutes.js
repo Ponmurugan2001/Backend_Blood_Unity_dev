@@ -1,6 +1,6 @@
 const express = require("express");
 const authMiddelware = require("../middlewares/authMiddelware");
-const {createInventoryController,getInventoryController,getAllInventory} = require("../controllers/inventoryController");
+const {createInventoryController,getInventoryController,getAllInventory,createInventoryProfile,getInventoryProfilesByOrganisationId} = require("../controllers/inventoryController");
 
 const router = express.Router();
 
@@ -13,7 +13,7 @@ http://localhost:9000/api/user/inventory/get-inventory
 router.get('/get-inventory',authMiddelware, getInventoryController);
 
 router.get('/get-allinventory',authMiddelware,getAllInventory);
-
-
+router.post("/create-inventory-profile",createInventoryProfile);
+router.get('/get-inventory-profile/:organisationId',getInventoryProfilesByOrganisationId);
 
 module.exports = router;

@@ -2,7 +2,10 @@ const mongoose = require("mongoose");
 const inventoryModel = require("../models/inventoryModel");
 const User = require("../models/modelUser");
 
-// CREATE INVENTORY
+const InventoryProfile = require('../models/InventoryProfileModel')
+
+
+// CREATE INVENTOR
 exports.createInventoryController = async (req, res) => {
   try {
     // const { email } = req.body;
@@ -128,5 +131,64 @@ exports.getAllInventory = async (req, res) => {
       message: "Error in retrieving all inventory records",
       error: error.message,
     });
+  }
+};
+
+// Create an Inventory Profile
+exports.createInventoryProfile = async (req, res) => {
+  try {
+    const {
+      OrganisationName,
+      phoneNumber,
+      email,
+      Address,
+      location,
+      OrganisationId,
+    } = req.body;
+
+    // Check if a profile with the same OrganisationId already exists
+    const existingProfile = await InventoryProfile.findOne({ OrganisationId });
+
+    if (existingProfile) {
+      // If a profile with the same OrganisationId exists, delete it
+      await InventoryProfile.findByIdAndDelete(existingProfile._id);
+    }
+
+    const profile = new InventoryProfile({
+      OrganisationName,
+      phoneNumber,
+      email,
+      Address,
+      location,
+      OrganisationId,
+    });
+
+    const savedProfile = await profile.save();
+
+    res.status(201).json({ success: true, data: savedProfile });
+    
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Internal server error", errorMessage: error.message });
+  }
+};
+
+
+// Get an Inventory Profile by ID
+
+
+// Get Inventory Profiles by OrganisationId
+exports.getInventoryProfilesByOrganisationId = async (req, res) => {
+  try {
+    const profiles = await InventoryProfile.find({
+      OrganisationId: req.params.organisationId,
+    });
+
+    if (!profiles) {
+      return res.status(404).json({ error: 'Profiles not found' });
+    }
+
+    res.status(200).json({success:true, profiles});
+  } catch (error) {
+    res.status(500).json({success:false, error: 'Internal server error' });
   }
 };
